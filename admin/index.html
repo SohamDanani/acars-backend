@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>A-Cars Admin Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f4f4f4; }
+    h1 { color: #3b141c; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { padding: 12px; border: 1px solid #ddd; }
+    th { background-color: #3b141c; color: white; }
+    button { padding: 6px 10px; margin-right: 6px; cursor: pointer; }
+    .delete { background-color: #e74c3c; color: white; border: none; }
+    .update { background-color: #f3961c; color: white; border: none; }
+  </style>
+</head>
+<body>
+  <h1>A-Cars Admin Dashboard</h1>
+  <p>Token: <input type="password" id="token" placeholder="Enter admin token" /></p>
+  <button onclick="loadCars()">Load Listings</button>
+  <table id="carsTable">
+    <thead>
+      <tr>
+        <th>ID</th><th>Name</th><th>Model</th><th>Description</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function loadCars() {
+      const res = await fetch("http://localhost:8000/api/cars");
+      const cars = await res.json();
+      const tbody = document.querySelector("#carsTable tbody");
+      tbody.innerHTML = "";
+      cars.forEach(car => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${car._id}</td>
+          <td contenteditable="true">${car.name}</td>
+          <td contenteditable="true">${car.model}</td>
+          <td contenteditable="true">${car.description}</td>
+          <td>
+            <button class="update" onclick="updateCar('${car._id}', this)">Update</button>
+            <button class="delete" onclick="deleteCar('${car._id}')">Delete</button>
+          </td>`;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function updateCar(id, btn) {
+      const row = btn.closest("tr");
+      const token = document.getElementById("token").value;
+      const data = {
+        name: row.cells[1].textContent,
+        model: row.cells[2].textContent,
+        description: row.cells[3].textContent
+      };
+
+      const res = await fetch(`http://localhost:8000/api/cars/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
+
+      alert((await res.json()).message);
+    }
+
+    async function deleteCar(id) {
+      const token = document.getElementById("token").value;
+      const res = await fetch(`http://localhost:8000/api/cars/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      alert((await res.json()).message);
+      loadCars();
+    }
+  </script>
+</body>
+</html>
